@@ -1,0 +1,50 @@
+<section id="subjects-section">
+<div class="stat-grid overview-grid">
+<div class="stat card highlight"><span>Current GWA</span><strong>{% if gwa %}{{ gwa|floatformat:2 }}{% else %}—{% endif %}</strong></div>
+<div class="stat card"><span>Subjects</span><strong>{{ rows|length }}</strong></div>
+</div>
+
+<div class="section-header">
+<h2>Subjects</h2>
+</div>
+
+{% if rows %}
+<div class="subject-grid">
+{% for subject, result in rows %}
+<article class="subject-card card">
+  <div class="subject-card-top">
+    <a class="subject-name" href="{% url 'subjects:subject_detail' subject.pk %}">{{ subject.name }}</a>
+    <form class="delete-form"
+          hx-post="{% url 'subjects:subject_delete' subject.pk %}"
+          hx-target="#subjects-section" hx-swap="outerHTML"
+          hx-confirm="Delete &quot;{{ subject.name }}&quot;? This will remove all its grades and cannot be undone.">
+      {% csrf_token %}
+      <button type="submit" class="icon-btn danger" aria-label="Delete {{ subject.name }}" title="Delete subject">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+          <path d="M10 11v6"></path>
+          <path d="M14 11v6"></path>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+        </svg>
+      </button>
+    </form>
+  </div>
+  <p class="subject-meta">{{ subject.units }} unit{{ subject.units|pluralize }}</p>
+  <div class="subject-card-stats">
+    <div><span>Computed Average</span><strong>{{ result.computed_average|floatformat:2 }}%</strong></div>
+    <div><span>Transmuted</span><strong>{{ result.transmuted_value }}</strong></div>
+    <div><span>Grade</span><strong class="grade-pill {% if result.current_grade == '5.00' %}fail{% else %}pass{% endif %}">{{ result.current_grade }}</strong></div>
+  </div>
+  <a class="view-link" href="{% url 'subjects:subject_detail' subject.pk %}">View details →</a>
+</article>
+{% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+<p>No subjects yet.</p>
+<a class="primary button" href="{% url 'subjects:subject_create' %}">Add your first subject</a>
+</div>
+{% endif %}
+</section>

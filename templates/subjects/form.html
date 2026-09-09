@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="breadcrumb" href="{% url 'subjects:dashboard' %}">&larr; All Subjects</a>
+<h1>Add Subject</h1>
+<p class="muted">Enter the subject information, then break down each term's Class Standing assessments and Major Examination.</p>
+
+<div class="add-subject-layout">
+<form method="post" id="subject-form" class="stack">
+{% csrf_token %}
+
+<section class="card form-section">
+  <h2>Subject Information</h2>
+  <div class="field-grid">
+    <label>Subject Name
+      <input type="text" name="name" id="f-name" required placeholder="e.g. Database Management Systems"
+             value="{{ form.name.value|default:'' }}">
+    </label>
+    <label>Units
+      <input type="number" step="0.01" min="0" name="units" id="f-units" required
+             value="{{ form.units.value|default:'3' }}">
+    </label>
+    <label>Passing Average
+      <input type="number" step="0.01" min="0" max="99.99" name="passing_average" id="f-passing"
+             required value="{{ form.passing_average.value|default:'50' }}">
+    </label>
+    <label>Class Standing <span class="unit-suffix">%</span>
+      <input type="number" step="0.01" min="0" max="100" name="class_standing_percent_share" id="f-csps"
+             required value="{{ form.class_standing_percent_share.value|default:'70' }}">
+    </label>
+    <label>Major Examination <span class="unit-suffix">%</span>
+      <input type="number" step="0.01" min="0" max="100" name="major_exam_percent_share" id="f-meps"
+             required value="{{ form.major_exam_percent_share.value|default:'30' }}">
+    </label>
+  </div>
+  {% if form.errors %}<p class="form-error">Please check the highlighted fields below.</p>{% endif %}
+</section>
+
+{% for term in terms %}
+<section class="card term-section" data-period="{{ term.prefix }}">
+  <h2 class="term-title"><span class="term-dot"></span>{{ term.label|upper }}</h2>
+
+  <h3 class="subsection-title">Class Standing</h3>
+  <div class="assessment-table-wrap">
+    <table class="assessment-table">
+      <thead><tr><th>Assessment</th><th>Score</th><th>HPS</th><th></th></tr></thead>
+      <tbody id="cs-rows-{{ term.prefix }}"></tbody>
+    </table>
+  </div>
+  <button type="button" class="add-row-btn" data-add-row="{{ term.prefix }}">+ Add assessment</button>
+
+  <h3 class="subsection-title">Major Examination</h3>
+  <div class="major-exam-grid">
+    <label>{{ term.label }} Exam
+      <div class="score-pair">
+        <input type="number" step="0.01" min="0" name="{{ term.prefix }}_exam_score"
+               class="term-input" placeholder="Score">
+        <span>/</span>
+        <input type="number" step="0.01" min="0" name="{{ term.prefix }}_exam_hps"
+               class="term-input" placeholder="HPS" value="100">
+      </div>
+    </label>
+    <label>Weight <span class="unit-suffix">%</span>
+      <input type="number" step="0.01" min="0" max="100" name="{{ term.prefix }}_exam_weight"
+             class="term-input" value="33.33">
+    </label>
+  </div>
+</section>
+{% endfor %}
+
+<button type="submit" class="primary submit-btn">Create subject</button>
+</form>
+
+<aside class="card preview-card">
+  <h2>Live Preview</h2>
+  <p class="muted small">Updates automatically as you fill in the form.</p>
+  <div class="stat-grid preview-grid">
+    <div class="stat"><span>Class Standing Average</span><strong id="pv-csa">—</strong></div>
+    <div class="stat"><span>Major Examination Average</span><strong id="pv-mea">—</strong></div>
+    <div class="stat"><span>Computed Average</span><strong id="pv-ca">—</strong></div>
+    <div class="stat"><span>Transmuted Value</span><strong id="pv-tv">—</strong></div>
+    <div class="stat"><span>Current Grade</span><strong id="pv-grade">—</strong></div>
+  </div>
+</aside>
+</div>
+
+<template id="cs-row-template">
+  <tr class="cs-row">
+    <td><input type="text" name="__PREFIX___name" placeholder="e.g. Quiz 1" class="row-input"></td>
+    <td><input type="number" step="0.01" min="0" name="__PREFIX___score" class="row-input row-score"></td>
+    <td><input type="number" step="0.01" min="0" name="__PREFIX___hps" class="row-input row-hps" value="100"></td>
+    <td><button type="button" class="remove-row-btn" aria-label="Remove assessment">&times;</button></td>
+  </tr>
+</template>
+
+<script src="/static/js/subject-form.js"></script>
+{% endblock %}

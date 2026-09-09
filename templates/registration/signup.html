@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Create your account</h1>
+<p class="muted">Your subjects and GWA are private to your account.</p>
+<form method="post" class="card form-grid">{% csrf_token %}{{ form.as_p }}<button class="primary">Sign up</button></form>
+<p class="muted small auth-switch">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+{% endblock %}

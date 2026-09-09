@@ -1,0 +1,66 @@
+<div class="card term-section" id="term-{{ period.code }}" data-period="{{ period.code|lower }}">
+  <h2 class="term-title"><span class="term-dot"></span>{{ period.label|upper }}</h2>
+
+  <h3 class="subsection-title">Class Standing</h3>
+  <div class="assessment-table-wrap">
+    <table class="assessment-table">
+      <thead><tr><th>Assessment</th><th>Score</th><th>HPS</th><th></th></tr></thead>
+      <tbody>
+      {% for a in period.cs_assessments %}
+      <tr>
+        <td>{{ a.name }}</td>
+        <td>{% if a.score is not None %}{{ a.score }}{% else %}—{% endif %}</td>
+        <td>{{ a.highest_possible_score }}</td>
+        <td>
+          <form hx-post="{% url 'subjects:class_standing_delete' subject.pk a.pk %}"
+                hx-target="#term-{{ period.code }}" hx-swap="outerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="grading_period" value="{{ period.code }}">
+            <button type="submit" class="remove-row-btn" aria-label="Remove assessment">&times;</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr class="empty-row"><td colspan="4">No assessments yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <form class="add-assessment-form" hx-post="{% url 'subjects:class_standing_add' subject.pk %}"
+        hx-target="#term-{{ period.code }}" hx-swap="outerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="grading_period" value="{{ period.code }}">
+    <input type="text" name="name" placeholder="Assessment name" required class="row-input">
+    <input type="number" step="0.01" min="0" name="score" placeholder="Score" class="row-input">
+    <input type="number" step="0.01" min="0" name="highest_possible_score" placeholder="HPS" value="100" class="row-input">
+    <button type="submit" class="add-row-btn">+ Add assessment</button>
+  </form>
+
+  <h3 class="subsection-title">Major Examination</h3>
+  <form class="major-exam-grid" hx-post="{% url 'subjects:major_exam_update' subject.pk period.code %}"
+        hx-target="#term-{{ period.code }}" hx-swap="outerHTML">
+    {% csrf_token %}
+    <label>{{ period.label }} Exam
+      <div class="score-pair">
+        <input type="number" step="0.01" min="0" name="score" class="term-input"
+               value="{% if period.major_exam.score is not None %}{{ period.major_exam.score }}{% endif %}"
+               placeholder="Score">
+        <span>/</span>
+        <input type="number" step="0.01" min="0" name="highest_possible_score" class="term-input"
+               value="{{ period.major_exam.highest_possible_score|default:100 }}" placeholder="HPS">
+      </div>
+    </label>
+    <label>Weight <span class="unit-suffix">%</span>
+      <input type="number" step="0.01" min="0" max="100" name="weight" class="term-input"
+             value="{{ period.major_exam.weight|default:'33.33' }}">
+    </label>
+    <button type="submit" class="secondary save-btn">Save</button>
+  </form>
+</div>
+
+{% if oob %}
+<div id="grade-results" class="stat-grid" hx-swap-oob="true">
+{% include "subjects/_results.html" %}
+</div>
+{% endif %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="breadcrumb" href="{% url 'subjects:dashboard' %}">&larr; All Subjects</a>
+<div class="hero subject-hero">
+<div>
+<p class="eyebrow">Subject</p>
+<h1>{{ subject.name }}</h1>
+<p>{{ subject.units }} unit{{ subject.units|pluralize }} · Passing Average {{ subject.passing_average }}% ·
+Class Standing {{ subject.class_standing_percent_share }}% / Major Exam {{ subject.major_exam_percent_share }}%</p>
+</div>
+<form class="delete-form" method="post" action="{% url 'subjects:subject_delete' subject.pk %}"
+      onsubmit="return confirm('Delete “{{ subject.name }}”? This will remove all its grades and cannot be undone.');">
+  {% csrf_token %}
+  <button type="submit" class="delete-subject-btn" title="Delete subject">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+      <path d="M10 11v6"></path>
+      <path d="M14 11v6"></path>
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+    </svg>
+    Delete Subject
+  </button>
+</form>
+</div>
+
+<h2 class="section-label">Overall Grade</h2>
+<div id="grade-results" class="stat-grid">
+{% include "subjects/_results.html" %}
+</div>
+
+<section class="two-col">
+<div class="stack">
+{% for period in periods %}
+{% include "subjects/_term.html" %}
+{% endfor %}
+</div>
+
+<div>
+<h2 class="section-label">Target Grade</h2>
+<div class="card">
+<form hx-post="{% url 'subjects:target_grade' subject.pk %}" hx-target="#target-result">
+{% csrf_token %}
+<label>Target grade
+<select name="target_grade">{% for g in target_grades %}<option>{{ g }}</option>{% endfor %}</select>
+</label>
+<button class="primary">Calculate</button>
+</form>
+<div id="target-result"></div>
+</div>
+</div>
+</section>
+{% endblock %}

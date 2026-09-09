@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}HAU Grade Planner{% endblock %}</title>
+<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<header class="nav">
+<a href="{% url 'subjects:dashboard' %}" class="brand">HAU Grade Planner</a>
+{% if user.is_authenticated %}
+<nav class="nav-actions">
+<a class="nav-link" href="{% url 'subjects:dashboard' %}">My Subjects</a>
+<a class="nav-link nav-link-primary" href="{% url 'subjects:subject_create' %}">+ Add subject</a>
+<form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}<button class="nav-link nav-logout">Log out</button></form>
+</nav>
+{% endif %}
+</header>
+<main class="container">
+{% if messages %}
+<ul class="messages">
+{% for message in messages %}
+<li class="message{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+<div><p class="eyebrow">HOLY ANGEL UNIVERSITY</p><h1>Grade &amp; GWA Planner</h1>
+<p>Calculate HAU subject grades and plan what you need to reach your target.</p></div>
+<a class="primary button" href="{% url 'subjects:subject_create' %}">+ Add subject</a>
+</div>
+
+{% include "subjects/_subjects_section.html" %}
+{% endblock %}

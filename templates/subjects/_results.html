@@ -1,0 +1,5 @@
+<div class="stat card"><span>Class Standing Average</span><strong>{{ result.class_standing_average|floatformat:2 }}%</strong></div>
+<div class="stat card"><span>Major Examination Average</span><strong>{{ result.major_exam_average|floatformat:2 }}%</strong></div>
+<div class="stat card"><span>Computed Average</span><strong>{{ result.computed_average|floatformat:2 }}%</strong></div>
+<div class="stat card"><span>Transmuted Value</span><strong>{{ result.transmuted_value }}</strong></div>
+<div class="stat card highlight"><span>Current Grade</span><strong class="grade-pill {% if result.current_grade == '5.00' %}fail{% else %}pass{% endif %}">{{ result.current_grade }}</strong></div>

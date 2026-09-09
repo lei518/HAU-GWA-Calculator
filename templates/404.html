@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Not found · HAU Grade Planner{% endblock %}
+{% block content %}
+<div class="error-state card">
+<p class="eyebrow">404</p>
+<h1>We couldn't find that page</h1>
+<p class="muted">It may have been deleted, moved, or the link is out of date.</p>
+{% if user.is_authenticated %}
+<a class="primary button" href="{% url 'subjects:dashboard' %}">Back to dashboard</a>
+{% else %}
+<a class="primary button" href="{% url 'login' %}">Back to login</a>
+{% endif %}
+</div>
+{% endblock %}
