@@ -1,0 +1,25 @@
+{% comment %}
+Renders any auth form field by field. Django's {{ form.as_p }} appends a
+label_suffix (the "Username:" colons) and drops errors and help text into
+markup this stylesheet does not control, so the fields are walked manually
+instead.
+{% endcomment %}
+
+{% if form.non_field_errors %}
+  <div class="auth-alert" role="alert">
+    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+  </div>
+{% endif %}
+
+{% for field in form %}
+  <div class="auth-field{% if field.errors %} has-error{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.help_text %}
+      <p class="auth-help">{{ field.help_text|safe }}</p>
+    {% endif %}
+    {% for error in field.errors %}
+      <p class="auth-error">{{ error }}</p>
+    {% endfor %}
+  </div>
+{% endfor %}

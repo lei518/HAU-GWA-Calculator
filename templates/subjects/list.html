@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block nav_subjects %}is-active{% endblock %}
+{% block title %}My Subjects{% endblock %}
+{% block content %}
+
+<div class="hero">
+  <div>
+    <h1>My Subjects</h1>
+    <p>Every subject you are tracking, in alphabetical order.</p>
+  </div>
+  <a class="primary button" href="{% url 'subjects:subject_create' %}">+ Add Subject</a>
+</div>
+
+<section id="subjects-section">
+{% if rows %}
+  {% include "subjects/_subject_cards.html" %}
+{% else %}
+<div class="card empty-state">
+  <h3>No subjects yet.</h3>
+  <p class="muted">Add your first subject to start calculating your grades and GWA.</p>
+  <a class="primary button" href="{% url 'subjects:subject_create' %}">+ Add Subject</a>
+</div>
+{% endif %}
+</section>
+{% endblock %}

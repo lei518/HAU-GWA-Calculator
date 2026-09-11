@@ -1,0 +1,35 @@
+{% comment %}
+Shared subject grid. The whole card is the link to its detail page: the title
+carries the real anchor and a stretched overlay makes the rest of the card
+clickable, so keyboard and screen-reader users still get one properly-labelled
+link rather than a div with a click handler.
+{% endcomment %}
+<div class="subject-grid">
+{% for subject, result in rows %}
+<article class="subject-card card">
+  <div class="subject-card-body">
+    <div class="subject-card-header">
+      <a class="subject-name stretched" href="{% url 'subjects:subject_detail' subject.pk %}">{{ subject.name }}</a>
+      <p class="subject-meta">{{ subject.units }} unit{{ subject.units|pluralize }}</p>
+    </div>
+    <div class="subject-card-grade">
+      <span>Current Grade</span>
+      <strong class="grade-pill {% if result.current_grade == '5.00' %}fail{% else %}pass{% endif %}">{{ result.current_grade }}</strong>
+    </div>
+    <dl class="subject-card-details">
+      <div><dt>Computed Average</dt><dd>{{ result.computed_average|floatformat:2 }}%</dd></div>
+      <div><dt>Passing Average</dt><dd>{{ subject.passing_average|floatformat:0 }}</dd></div>
+    </dl>
+  </div>
+  <div class="subject-card-footer">
+    <form class="delete-form"
+          hx-post="{% url 'subjects:subject_delete' subject.pk %}"
+          hx-target="#subjects-section" hx-swap="outerHTML"
+          hx-confirm="Delete &quot;{{ subject.name }}&quot;? This will remove all its grades and cannot be undone.">
+      {% csrf_token %}
+      <button type="submit" class="link-danger" aria-label="Delete {{ subject.name }}" title="Delete subject">Delete</button>
+    </form>
+  </div>
+</article>
+{% endfor %}
+</div>

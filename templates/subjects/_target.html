@@ -1,2 +1,119 @@
-<div class="target-message"><strong>Target {{ target }}</strong><p>{{ message }}</p>
-<small>Required Computed Average: {{ required_ca|floatformat:2 }}%</small></div>
+<div class="target-panel">
+  <div class="target-status target-status--{{ plan.status }}">
+    {% if plan.status == "achievable" %}
+      <span class="target-status-icon">&#10003;</span> Target achievable
+    {% elif plan.status == "difficult" %}
+      <span class="target-status-icon">&#9888;</span> Achievable, but needs a very high score
+    {% elif plan.status == "open" %}
+      <span class="target-status-icon">&#8635;</span> Still possible &mdash; depends on activities not yet entered
+    {% else %}
+      <span class="target-status-icon">&#10007;</span> Not currently achievable
+    {% endif %}
+  </div>
+
+  <div class="target-row"><span>Target Grade</span><strong>{{ plan.target }}</strong></div>
+  <div class="target-row"><span>Required Computed Average</span><strong>{{ plan.required_ca|floatformat:2 }}%</strong></div>
+
+  {% if plan.status != "achievable" %}
+  <div class="target-row"><span>Your maximum possible</span><strong>{{ plan.max_ca|floatformat:2 }}%</strong></div>
+  <p class="target-explain">
+    {% if plan.status == "open" %}
+      Your {{ plan.open_periods|join:", "|title }} grading period has not been entered yet, so this is based only on the scores recorded so far. To reach {{ plan.target }} you need to finish Class Standing at {{ plan.cs_required_avg_with_best_exams|floatformat:2 }}% &mdash; about {{ plan.perfect_cs_points_needed|floatformat:0 }} more points at full marks &mdash; along with top scores on your remaining major exams.
+    {% elif not plan.cs.has_remaining and not plan.me.has_remaining %}
+      Both your Class Standing and Major Examination scores are already finalized, so your computed average is locked at {{ plan.max_ca|floatformat:2 }}%.
+    {% elif not plan.cs.has_remaining %}
+      Your Class Standing is already finalized at {{ plan.cs.current_average|floatformat:2 }}%. Even with a perfect 100% Major Examination Average, the highest computed average you can reach is {{ plan.max_ca|floatformat:2 }}%.
+    {% elif not plan.me.has_remaining %}
+      Your Major Examination scores are already finalized at {{ plan.me.current_average|floatformat:2 }}%. Even with a perfect 100% on your remaining Class Standing assessments, the highest computed average you can reach is {{ plan.max_ca|floatformat:2 }}%.
+    {% else %}
+      Even with a perfect 100% on your remaining Class Standing assessments and Major Examinations, the highest computed average you can reach is {{ plan.max_ca|floatformat:2 }}%.
+    {% endif %}
+    {% if plan.status == "impossible" %}This falls short of the {{ plan.required_ca|floatformat:2 }}% required for this target.{% endif %}
+  </p>
+  {% endif %}
+
+  <div class="target-section">
+    <h4>Class Standing</h4>
+    <div class="target-row target-row-primary"><span>Completed</span><strong>{{ plan.cs.scored_points|floatformat:2 }} / {{ plan.cs.scored_hps|floatformat:2 }} points</strong></div>
+    <div class="target-row"><span>Current Average</span><strong>{{ plan.cs.current_average|floatformat:2 }}%</strong></div>
+    {% if plan.cs_required_avg is not None %}
+    <div class="target-row"><span>Required Average <em>(Major Exam kept at current)</em></span><strong>{{ plan.cs_required_avg|floatformat:2 }}%</strong></div>
+    {% endif %}
+    {% if plan.cs.has_remaining %}
+      <div class="target-row target-row-muted"><span>Points so far</span><strong>{{ plan.cs.scored_points|floatformat:2 }} / {{ plan.cs.scored_hps|floatformat:2 }}</strong></div>
+      <div class="target-row target-row-muted"><span>Remaining possible points</span><strong>{{ plan.cs.remaining_hps|floatformat:2 }}</strong></div>
+      {% if plan.cs_points_needed is not None %}
+      <p class="target-note">
+        {% if plan.cs_points_needed <= 0 %}
+          Your current Class Standing points already meet this requirement.
+        {% elif plan.cs_points_needed > plan.cs.remaining_hps %}
+          Not reachable through Class Standing alone &mdash; that would take {{ plan.cs_points_needed|floatformat:2 }} of the {{ plan.cs.remaining_hps|floatformat:2 }} remaining points.
+        {% else %}
+          You need {{ plan.cs_points_needed|floatformat:2 }} more points out of the {{ plan.cs.remaining_hps|floatformat:2 }} remaining points.
+        {% endif %}
+      </p>
+      {% endif %}
+    {% else %}
+      <p class="target-note">No pending Class Standing assessments &mdash; this average is already final.</p>
+    {% endif %}
+  </div>
+
+  <div class="target-section">
+    <h4>Major Examination</h4>
+    <div class="target-row"><span>Current Average</span><strong>{{ plan.me.current_average|floatformat:2 }}%</strong></div>
+    {% if plan.me_required_avg is not None %}
+    <div class="target-row"><span>Required Average <em>(Class Standing kept at current)</em></span><strong>{{ plan.me_required_avg|floatformat:2 }}%</strong></div>
+    {% else %}
+    <p class="target-note">Major examinations do not contribute to this subject.</p>
+    {% endif %}
+    {% if me_remaining_label and plan.me_required_score is not None %}
+      <p class="target-note">
+        {% if plan.me_required_score <= 0 %}
+          Your already-scored Major Examinations already meet this requirement, regardless of the remaining {{ me_remaining_label }} Exam.
+        {% elif plan.me_required_score > 100 %}
+          Not achievable through the remaining {{ me_remaining_label }} Exam alone &mdash; it would require more than a perfect score ({{ plan.me_required_score|floatformat:2 }}% of {{ plan.me.remaining_exams.0.highest_possible_score|floatformat:2 }} points).
+        {% else %}
+          On the remaining {{ me_remaining_label }} Exam (out of {{ plan.me.remaining_exams.0.highest_possible_score|floatformat:2 }} points), you need a score of at least
+          <strong>{{ plan.me_required_score|floatformat:2 }}%</strong>
+          (&asymp; {% widthratio plan.me_required_score 100 plan.me.remaining_exams.0.highest_possible_score %} / {{ plan.me.remaining_exams.0.highest_possible_score|floatformat:0 }}).
+        {% endif %}
+      </p>
+    {% elif not plan.me.has_remaining %}
+      <p class="target-note">All Major Examinations are already scored &mdash; this average is already final.</p>
+    {% elif plan.me.has_remaining %}
+      <p class="target-note">You still have {{ plan.me.remaining_exams|length }} major examination{{ plan.me.remaining_exams|length|pluralize }} remaining.</p>
+    {% endif %}
+  </div>
+
+  {% if plan.scenario_current_cs_required_me is not None and plan.scenario_perfect_cs_required_me is not None %}
+  <div class="target-section">
+    <h4>Scenarios</h4>
+    <div class="scenario-row">
+      <div><span>Keep Class Standing at current ({{ plan.cs.current_average|floatformat:2 }}%)</span><strong>Required Major Exam: {{ plan.scenario_current_cs_required_me|floatformat:2 }}%</strong></div>
+      <span class="scenario-tag {% if plan.scenario_current_cs_achievable %}scenario-tag--ok{% else %}scenario-tag--no{% endif %}">
+        {% if plan.scenario_current_cs_achievable %}Achievable{% else %}Not achievable{% endif %}
+      </span>
+    </div>
+    <div class="scenario-row">
+      <div><span>Perfect Class Standing (100%)</span><strong>Required Major Exam: {{ plan.scenario_perfect_cs_required_me|floatformat:2 }}%</strong></div>
+      <span class="scenario-tag {% if plan.scenario_perfect_cs_achievable %}scenario-tag--ok{% else %}scenario-tag--no{% endif %}">
+        {% if plan.scenario_perfect_cs_achievable %}Achievable{% else %}Not achievable{% endif %}
+      </span>
+    </div>
+    {% if not plan.scenario_perfect_cs_reachable %}
+    <p class="target-note">Note: a perfect 100% Class Standing is no longer reachable &mdash; some already-scored assessments fall short of full marks, so this scenario is shown for comparison only.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if plan.status != "achievable" %}
+  <div class="target-section">
+    <h4>Best Possible Result</h4>
+    <div class="target-row target-row-primary"><span>Maximum Class Standing</span><strong>{{ plan.cs.max_points|floatformat:2 }} / {{ plan.cs.max_hps|floatformat:2 }} points</strong></div>
+    <div class="target-row"><span>Maximum Class Standing Average</span><strong>{{ plan.cs.max_average|floatformat:2 }}%</strong></div>
+    <div class="target-row"><span>Maximum Major Examination Average</span><strong>{{ plan.me.max_average|floatformat:2 }}%</strong></div>
+    <div class="target-row"><span>Maximum Computed Average</span><strong>{{ plan.max_ca|floatformat:2 }}%</strong></div>
+    <div class="target-row"><span>Maximum Transmuted Grade</span><strong>{{ plan.max_grade }}</strong></div>
+  </div>
+  {% endif %}
+</div>

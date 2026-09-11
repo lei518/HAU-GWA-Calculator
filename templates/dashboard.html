@@ -1,9 +1,28 @@
 {% extends "base.html" %}
+{% block nav_home %}is-active{% endblock %}
 {% block content %}
-<div class="hero">
-<div><p class="eyebrow">HOLY ANGEL UNIVERSITY</p><h1>Grade &amp; GWA Planner</h1>
-<p>Calculate HAU subject grades and plan what you need to reach your target.</p></div>
-<a class="primary button" href="{% url 'subjects:subject_create' %}">+ Add subject</a>
+
+<section class="greeting">
+  <h1>Hi {{ user.get_username }}</h1>
+  <p>Track your grades, calculate your GWA, and see what you need to reach your target.</p>
+</section>
+
+<div class="stat-row">
+  <article class="stat-card stat-card--primary">
+    <p class="stat-label">Overall GWA</p>
+    <p class="stat-value">{% if gwa %}{{ gwa|floatformat:2 }}{% else %}&mdash;{% endif %}</p>
+    <p class="stat-foot">{% if gwa %}Across all subjects{% else %}No grades yet{% endif %}</p>
+  </article>
+  <article class="stat-card">
+    <p class="stat-label">Subjects</p>
+    <p class="stat-value">{{ rows|length }}</p>
+    <p class="stat-foot">{% if rows %}Being tracked{% else %}Add your first one{% endif %}</p>
+  </article>
+  <article class="stat-card">
+    <p class="stat-label">Total Units</p>
+    <p class="stat-value">{{ total_units|floatformat:0 }}</p>
+    <p class="stat-foot">Weighted into your GWA</p>
+  </article>
 </div>
 
 {% include "subjects/_subjects_section.html" %}

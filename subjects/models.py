@@ -20,6 +20,11 @@ class Subject(models.Model):
     class_standing_percent_share = models.DecimalField(max_digits=5, decimal_places=2, default=70)
     major_exam_percent_share = models.DecimalField(max_digits=5, decimal_places=2, default=30)
 
+    # Stamped whenever the student opens the subject, so Home can show what
+    # they were last working on. Null means never opened -- such subjects
+    # sort last rather than being treated as opened at the epoch.
+    last_viewed_at = models.DateTimeField(null=True, blank=True, default=None)
+
     def __str__(self):
         return self.name
 

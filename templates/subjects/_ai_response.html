@@ -1,0 +1,11 @@
+{% if error %}
+<div class="ai-response ai-response--error">
+  <p>{{ error }}</p>
+</div>
+{% else %}
+<div class="ai-response">
+  <p class="ai-response-question">&ldquo;{{ question }}&rdquo;</p>
+  <div class="ai-response-answer">{{ answer|linebreaksbr }}</div>
+  <p class="ai-response-disclaimer">AI-generated explanation based on your calculated grades above. Always verify against your official record.</p>
+</div>
+{% endif %}

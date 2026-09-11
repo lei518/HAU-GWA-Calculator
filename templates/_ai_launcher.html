@@ -1,0 +1,72 @@
+{# Floating assistant. `subject` is only in context on a subject page, which
+   is what scopes the panel: with one, it asks about that subject; without
+   one, there is nothing to ask about yet, so it offers the subject list
+   instead of a text box that could not be answered. #}
+<button class="ai-fab" type="button" data-ai-open
+        aria-label="Open AI grade assistant" aria-expanded="false" aria-controls="ai-panel">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 14h.01M15 14h.01"/>
+  </svg>
+</button>
+
+<div class="ai-panel" id="ai-panel" data-ai-panel hidden
+     role="dialog" aria-modal="false" aria-labelledby="ai-panel-title">
+  <header class="ai-panel-head">
+    <div>
+      <p class="ai-panel-title" id="ai-panel-title">AI Grade Assistant</p>
+      {% if subject %}
+        <p class="ai-panel-scope">Answering about {{ subject.name }}</p>
+      {% else %}
+        <p class="ai-panel-scope">Pick a subject to ask about</p>
+      {% endif %}
+    </div>
+    <button class="ai-panel-close" type="button" data-ai-close aria-label="Close assistant">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </header>
+
+  <div class="ai-panel-body">
+    {% if subject %}
+      <div class="ai-quick-questions">
+        <button type="button" class="ai-quick-btn" data-question="Can I still get 1.00?">Can I still get 1.00?</button>
+        <button type="button" class="ai-quick-btn" data-question="Can I still get 1.25?">Can I still get 1.25?</button>
+        <button type="button" class="ai-quick-btn" data-question="What do I need for 1.50?">What do I need for 1.50?</button>
+        <button type="button" class="ai-quick-btn" data-question="Predict my final grade.">Predict my final grade</button>
+      </div>
+      <p id="ai-assistant-loading" class="htmx-indicator ai-assistant-loading">Thinking&hellip;</p>
+      <div id="ai-assistant-result" class="ai-panel-result"></div>
+    {% else %}
+      {% if ai_subjects %}
+        <p class="ai-panel-hint">The assistant answers one subject at a time, using that subject's recorded scores.</p>
+        <ul class="ai-subject-list">
+          {% for item in ai_subjects %}
+            <li><a href="{% url 'subjects:subject_detail' item.pk %}?ask=1">
+              <span>{{ item.name }}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="ai-panel-hint">Add a subject first, then the assistant can work out what you need.</p>
+        <a class="primary button" href="{% url 'subjects:subject_create' %}">Add a subject</a>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {% if subject %}
+  <form id="ai-assistant-form" class="ai-panel-form"
+        hx-post="{% url 'subjects:ai_assistant_ask' subject.pk %}"
+        hx-target="#ai-assistant-result" hx-swap="innerHTML" hx-indicator="#ai-assistant-loading">
+    {% csrf_token %}
+    <textarea id="ai-question-input" name="question" rows="1" maxlength="500"
+              placeholder="Ask about {{ subject.name }}&hellip;" required></textarea>
+    <button type="submit" class="ai-panel-send" aria-label="Send question">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+    </button>
+  </form>
+  {% endif %}
+</div>

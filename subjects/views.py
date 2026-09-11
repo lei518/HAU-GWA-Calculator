@@ -7,8 +7,15 @@ from django.db import transaction
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from .forms import SubjectForm
-from .grading import calculate_grade, required_major_exam_average
+from django.views.decorators.http import require_POST
+from . import ai_assistant
+from django.utils import timezone
+
+from .forms import SubjectForm, preset_for
+
+# How many subjects Home shows under "Recently viewed".
+RECENT_SUBJECT_COUNT = 6
+from .grading import build_target_plan, calculate_grade
 from .models import ClassStandingAssessment, FINAL, GRADING_PERIOD_CHOICES, MajorExam, MIDTERM, PRELIM, Subject
 
 PERIODS = [PRELIM, MIDTERM, FINAL]
@@ -26,8 +33,10 @@ def _decimal_or_none(value):
 def _subject_context(subject):
     cs_assessments = list(subject.class_standing_assessments.order_by("id"))
     major_exams = {e.grading_period: e for e in subject.major_exams.all()}
+    major_exam_list = list(major_exams.values())
     cs_by_period = {p: [a for a in cs_assessments if a.grading_period == p] for p in PERIODS}
-    result = calculate_grade(subject, cs_assessments, list(major_exams.values()))
+    result = calculate_grade(subject, cs_assessments, major_exam_list)
+
     return {
         "subject": subject,
         "result": result,
@@ -65,20 +74,47 @@ def _dashboard_rows(user):
     subjects = Subject.objects.filter(student=user).prefetch_related(
         "class_standing_assessments", "major_exams")
     rows, total_units, weighted = [], Decimal("0"), Decimal("0")
+    all_units = Decimal("0")
     for subject in subjects:
         result = calculate_grade(
             subject, list(subject.class_standing_assessments.all()), list(subject.major_exams.all()))
         rows.append((subject, result))
+        all_units += subject.units
         if result.current_grade not in {"5.00", "6.00", "8.00", "9.00"}:
             total_units += subject.units
             weighted += Decimal(result.current_grade) * subject.units
     gwa = weighted / total_units if total_units else None
-    return rows, gwa
+    return rows, gwa, all_units
 
 @login_required
 def dashboard(request):
-    rows, gwa = _dashboard_rows(request.user)
-    return render(request, "dashboard.html", {"rows": rows, "gwa": gwa})
+    """Home: overall standing plus the subjects most recently opened.
+
+    The full, alphabetised roster lives on the subjects page. Home answers
+    "what was I just working on", which is a different question from "show
+    me everything", so the two lists are not duplicates of each other.
+    """
+    rows, gwa, all_units = _dashboard_rows(request.user)
+    opened = [row for row in rows if row[0].last_viewed_at is not None]
+    opened.sort(key=lambda row: row[0].last_viewed_at, reverse=True)
+    return render(request, "dashboard.html", {
+        "rows": opened[:RECENT_SUBJECT_COUNT],
+        "has_any_subject": bool(rows),
+        "gwa": gwa,
+        "total_units": all_units,
+        "subject_count": len(rows),
+        "ai_subjects": sorted((row[0] for row in rows), key=lambda s: s.name.lower()),
+    })
+
+@login_required
+def subject_list(request):
+    """Every subject, A to Z -- the complete roster."""
+    rows, gwa, all_units = _dashboard_rows(request.user)
+    rows.sort(key=lambda row: row[0].name.lower())
+    return render(request, "subjects/list.html", {
+        "rows": rows, "gwa": gwa, "total_units": all_units,
+        "ai_subjects": [row[0] for row in rows],
+    })
 
 @login_required
 def subject_delete(request, pk):
@@ -87,8 +123,9 @@ def subject_delete(request, pk):
         return redirect("subjects:dashboard")
     subject.delete()
     if request.headers.get("HX-Request") == "true":
-        rows, gwa = _dashboard_rows(request.user)
-        return render(request, "subjects/_subjects_section.html", {"rows": rows, "gwa": gwa})
+        rows, gwa, all_units = _dashboard_rows(request.user)
+        return render(request, "subjects/_subjects_section.html",
+                      {"rows": rows, "gwa": gwa, "total_units": all_units})
     return redirect("subjects:dashboard")
 
 @login_required
@@ -125,10 +162,41 @@ def subject_create(request):
     return render(request, "subjects/form.html", {"form": form, "terms": terms})
 
 @login_required
+def subject_update(request, pk):
+    """Edit a subject's own settings (name, units, passing average, and the
+    Class Standing / Major Examination split) without touching any recorded
+    assessment or exam score.
+
+    This exists because the weighting is a per-subject property that a
+    student often only learns partway through the term. Without an edit
+    path the only way to correct it is to delete the subject and re-enter
+    every activity, which loses real data over a settings mistake."""
+    subject, response = _subject_or_redirect(request, pk)
+    if subject is None:
+        return response
+
+    if request.method == "POST":
+        form = SubjectForm(request.POST, instance=subject)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'"{subject.name}" was updated.')
+            return redirect("subjects:subject_detail", pk=subject.pk)
+    else:
+        form = SubjectForm(instance=subject, initial={
+            "share_preset": preset_for(subject.class_standing_percent_share,
+                                       subject.major_exam_percent_share),
+        })
+    return render(request, "subjects/edit.html", {"form": form, "subject": subject})
+
+@login_required
 def subject_detail(request, pk):
     subject, response = _subject_or_redirect(request, pk)
     if response is not None:
         return response
+    # Stamp the visit so Home can order by what was opened most recently.
+    # update() avoids a full save (and any auto_now fields firing) and does
+    # not disturb the in-memory instance used to render the page.
+    Subject.objects.filter(pk=subject.pk).update(last_viewed_at=timezone.now())
     context = _subject_context(subject)
     context["target_grades"] = "1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00".split(",")
     return render(request, "subjects/detail.html", context)
@@ -210,23 +278,33 @@ def target_grade(request, pk):
     if response is not None:
         return response
     target = request.POST.get("target_grade", "1.75")
+    cs_assessments = list(subject.class_standing_assessments.all())
+    major_exams = list(subject.major_exams.all())
     try:
-        result = calculate_grade(
-            subject, list(subject.class_standing_assessments.all()), list(subject.major_exams.all()))
-        required_mea, required_ca = required_major_exam_average(
-            subject, result.class_standing_average, target)
-        if required_mea is None:
-            message = "Major examinations do not contribute to this subject."
-        elif required_mea <= 0:
-            message = "Your current performance is already sufficient for this target."
-        elif required_mea > 100:
-            message = "This target is not currently achievable with a maximum 100% Major Examination Average."
-        else:
-            message = f"You need at least {required_mea:.2f}% Major Examination Average."
+        plan = build_target_plan(subject, cs_assessments, major_exams, target)
     except (ValueError, ArithmeticError) as exc:
         return HttpResponseBadRequest(str(exc))
+    me_remaining_label = None
+    if len(plan.me.remaining_exams) == 1:
+        me_remaining_label = PERIOD_LABELS[plan.me.remaining_exams[0].grading_period]
     return render(request, "subjects/_target.html",
-                  {"message": message, "required_ca": required_ca, "target": target})
+                  {"plan": plan, "target": target, "me_remaining_label": me_remaining_label})
+
+@login_required
+@require_POST
+def ai_assistant_ask(request, pk):
+    subject, response = _subject_or_redirect(request, pk)
+    if response is not None:
+        return response
+    question = request.POST.get("question", "")
+    cs_assessments = list(subject.class_standing_assessments.all())
+    major_exams = list(subject.major_exams.all())
+    try:
+        answer = ai_assistant.answer_question(subject, cs_assessments, major_exams, question)
+    except ai_assistant.AIAssistantError as exc:
+        return render(request, "subjects/_ai_response.html", {"error": str(exc)})
+    return render(request, "subjects/_ai_response.html",
+                  {"question": question.strip(), "answer": answer})
 
 def signup(request):
     if request.user.is_authenticated:

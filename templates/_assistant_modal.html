@@ -1,0 +1,76 @@
+{% comment %}
+Assistant modal. `subject` is only in context on a subject page, and that is
+what scopes it: with a subject it takes questions about that subject, without
+one it offers the roster, because an answer has to be grounded in some
+subject's recorded scores.
+{% endcomment %}
+<div class="ai-modal" data-ai-modal hidden role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+  <div class="ai-modal-backdrop" data-ai-close></div>
+
+  <div class="ai-modal-card" role="document">
+    <header class="ai-modal-head">
+      <span class="ai-modal-avatar" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 14h.01M15 14h.01"/></svg>
+      </span>
+      <div class="ai-modal-heading">
+        <p class="ai-modal-title" id="ai-modal-title">AI Grade Assistant</p>
+        {% if subject %}
+          <p class="ai-modal-scope">Answering about {{ subject.name }}</p>
+        {% else %}
+          <p class="ai-modal-scope">Choose a subject to ask about</p>
+        {% endif %}
+      </div>
+      <button class="ai-modal-close" type="button" data-ai-close aria-label="Close assistant">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </header>
+
+    <div class="ai-modal-body">
+      {% if subject %}
+        <div class="ai-quick-questions">
+          <button type="button" class="ai-quick-btn" data-question="Can I still get 1.00?">Can I still get 1.00?</button>
+          <button type="button" class="ai-quick-btn" data-question="Can I still get 1.25?">Can I still get 1.25?</button>
+          <button type="button" class="ai-quick-btn" data-question="What do I need for 1.50?">What do I need for 1.50?</button>
+          <button type="button" class="ai-quick-btn" data-question="Predict my final grade.">Predict my final grade</button>
+        </div>
+        <p id="ai-assistant-loading" class="htmx-indicator ai-assistant-loading">Thinking&hellip;</p>
+        <div id="ai-assistant-result" class="assistant-result"></div>
+      {% elif ai_subjects %}
+        <p class="muted small">The assistant works one subject at a time, so its answers stay grounded in that subject's own scores.</p>
+        <ul class="ai-subject-list">
+          {% for item in ai_subjects %}
+            <li><a href="{% url 'subjects:subject_detail' item.pk %}?ask=1">
+              <span>{{ item.name }}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">
+          <h3>No subjects yet.</h3>
+          <p class="muted">Add a subject and enter some scores, then the assistant can work out what you need.</p>
+          <a class="primary button" href="{% url 'subjects:subject_create' %}">Add a subject</a>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if subject %}
+    <form id="ai-assistant-form" class="assistant-form"
+          hx-post="{% url 'subjects:ai_assistant_ask' subject.pk %}"
+          hx-target="#ai-assistant-result" hx-swap="innerHTML" hx-indicator="#ai-assistant-loading">
+      {% csrf_token %}
+      <textarea id="ai-question-input" name="question" rows="1" maxlength="500"
+                placeholder="Ask about {{ subject.name }}&hellip;" required></textarea>
+      <button type="submit" class="assistant-send" aria-label="Send question">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>

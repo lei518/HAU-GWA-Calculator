@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% block nav_subjects %}is-active{% endblock %}
+{% block container_class %}container-wide{% endblock %}
 {% block content %}
-<a class="breadcrumb" href="{% url 'subjects:dashboard' %}">&larr; All Subjects</a>
 <div class="hero subject-hero">
 <div>
 <p class="eyebrow">Subject</p>
@@ -8,6 +9,15 @@
 <p>{{ subject.units }} unit{{ subject.units|pluralize }} · Passing Average {{ subject.passing_average }}% ·
 Class Standing {{ subject.class_standing_percent_share }}% / Major Exam {{ subject.major_exam_percent_share }}%</p>
 </div>
+<div class="subject-hero-actions">
+<a class="edit-subject-btn" href="{% url 'subjects:subject_update' subject.pk %}" title="Edit subject settings">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+  Edit Subject
+</a>
 <form class="delete-form" method="post" action="{% url 'subjects:subject_delete' subject.pk %}"
       onsubmit="return confirm('Delete “{{ subject.name }}”? This will remove all its grades and cannot be undone.');">
   {% csrf_token %}
@@ -24,31 +34,22 @@ Class Standing {{ subject.class_standing_percent_share }}% / Major Exam {{ subje
   </button>
 </form>
 </div>
+</div>
 
-<h2 class="section-label">Overall Grade</h2>
+
+
+<div class="card detail-grade-card">
+<h2 class="section-label detail-card-label">Overall Grade</h2>
 <div id="grade-results" class="stat-grid">
 {% include "subjects/_results.html" %}
 </div>
+</div>
 
-<section class="two-col">
-<div class="stack">
+<div class="stack detail-terms">
 {% for period in periods %}
 {% include "subjects/_term.html" %}
 {% endfor %}
 </div>
 
-<div>
-<h2 class="section-label">Target Grade</h2>
-<div class="card">
-<form hx-post="{% url 'subjects:target_grade' subject.pk %}" hx-target="#target-result">
-{% csrf_token %}
-<label>Target grade
-<select name="target_grade">{% for g in target_grades %}<option>{{ g }}</option>{% endfor %}</select>
-</label>
-<button class="primary">Calculate</button>
-</form>
-<div id="target-result"></div>
-</div>
-</div>
-</section>
+
 {% endblock %}

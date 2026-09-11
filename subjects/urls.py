@@ -4,8 +4,10 @@ from . import views
 app_name = "subjects"
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("subjects/", views.subject_list, name="subject_list"),
     path("subjects/new/", views.subject_create, name="subject_create"),
     path("subjects/<int:pk>/", views.subject_detail, name="subject_detail"),
+    path("subjects/<int:pk>/edit/", views.subject_update, name="subject_update"),
     path("subjects/<int:pk>/delete/", views.subject_delete, name="subject_delete"),
     path("subjects/<int:pk>/class-standing/add/", views.class_standing_add, name="class_standing_add"),
     path("subjects/<int:pk>/class-standing/<int:assessment_id>/delete/",
@@ -13,4 +15,5 @@ urlpatterns = [
     path("subjects/<int:pk>/major-exam/<str:period>/", views.major_exam_update, name="major_exam_update"),
     path("subjects/<int:pk>/recalculate/", views.recalculate, name="recalculate"),
     path("subjects/<int:pk>/target/", views.target_grade, name="target_grade"),
+    path("subjects/<int:pk>/ai-assistant/", views.ai_assistant_ask, name="ai_assistant_ask"),
 ]
