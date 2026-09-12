@@ -2,16 +2,26 @@ services:
   - type: web
     name: hau-grade-planner
     env: python
-    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    plan: free
+    # collectstatic is required: WhiteNoise serves from STATIC_ROOT, which
+    # does not exist until this runs. Without it the site deploys unstyled.
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
     startCommand: gunicorn config.wsgi:application
     envVars:
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_SECRET_KEY
         generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      # sync:false means Render prompts for it instead of storing it in the
+      # repo. Never commit an API key.
+      - key: GEMINI_API_KEY
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: hau-grade-db
           property: connectionString
 databases:
   - name: hau-grade-db
+    plan: free
