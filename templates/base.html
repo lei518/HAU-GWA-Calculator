@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-<link rel="stylesheet" href="/static/css/app.css?v=15">
+<link rel="stylesheet" href="/static/css/app.css?v=17">
 </head>
 <body class="{% if user.is_authenticated %}has-sidebar{% endif %} {% block body_class %}{% endblock %}">
 
@@ -100,6 +100,6 @@
 </button>
 {% include "_assistant_modal.html" %}
 {% endif %}
-<script src="/static/js/ai-launcher.js?v=15"></script>
+<script src="/static/js/ai-launcher.js?v=17"></script>
 </body>
 </html>
