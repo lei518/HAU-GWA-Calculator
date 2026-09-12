@@ -45,7 +45,6 @@ class MajorExam(models.Model):
     grading_period = models.CharField(max_length=20, choices=GRADING_PERIOD_CHOICES)
     score = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     highest_possible_score = models.DecimalField(max_digits=7, decimal_places=2, default=100)
-    weight = models.DecimalField(max_digits=5, decimal_places=2, default=33.33)
 
     class Meta:
         unique_together = [("subject", "grading_period")]

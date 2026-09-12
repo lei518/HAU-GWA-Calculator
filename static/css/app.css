@@ -177,7 +177,10 @@ input,select{width:100%;padding:10px 12px;border:1px solid var(--border-strong);
              font:inherit;color:var(--text-primary);transition:border-color .15s var(--ease),box-shadow .15s var(--ease)}
 input:hover,select:hover{border-color:#b7b7b7}
 input:focus,select:focus{outline:none;border-color:var(--maroon);box-shadow:0 0 0 3px rgba(122,0,25,.12)}
-input[type=checkbox]{width:auto}
+/* Radios and checkboxes are not text fields: without this they inherit
+   width:100%, padding and a border, and render as a wide empty box. */
+input[type=checkbox],input[type=radio]{width:auto;padding:0;border:0;background:none;box-shadow:none}
+input[type=radio]{accent-color:var(--maroon)}
 .form-grid{max-width:760px}
 .form-error{color:var(--danger);font-size:.85rem;margin:6px 0 0;font-weight:600;padding:10px 12px;
             background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--radius-sm)}
@@ -309,7 +312,9 @@ th,td{text-align:left;padding:16px;border-bottom:1px solid var(--border)}
 
 /* ---------- Subject cards (dashboard) ---------- */
 .overview-grid{margin-bottom:6px}
-.subject-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:var(--sp-6)}
+.subject-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:var(--sp-6)}
+/* Keeps two cards from stretching to half a very wide screen each. */
+@media (min-width:1100px){.subject-grid{grid-template-columns:repeat(auto-fit,minmax(270px,380px))}}
 .subject-card{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;border-left:4px solid var(--maroon)}
 .subject-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-2px)}
 .subject-card-body{padding:20px 22px 18px}
@@ -399,17 +404,15 @@ th,td{text-align:left;padding:16px;border-bottom:1px solid var(--border)}
 }
 .edit-subject-btn:hover { background: rgba(255, 255, 255, .12); }
 
-.share-presets { display: flex; flex-direction: column; gap: .5rem; margin: .75rem 0 1rem; }
-.share-preset-option {
-  display: flex; align-items: center; gap: .55rem;
-  padding: .6rem .75rem; border: 1px solid var(--border, #d8dee9);
-  border-radius: 8px; cursor: pointer; font-size: .925rem;
-}
-.share-preset-option:has(input:checked) {
-  border-color: var(--accent, #4f46e5);
-  background: rgba(79, 70, 229, .06);
-}
-.share-preset-option input { margin: 0; }
+.share-presets{display:flex;flex-direction:column;gap:8px;margin:12px 0 16px}
+.share-preset-option{display:flex;align-items:center;gap:10px;padding:12px 14px;
+                     border:1px solid var(--border);border-radius:var(--radius-sm);
+                     cursor:pointer;font-size:.92rem;font-weight:600;
+                     transition:border-color .15s var(--ease),background .15s var(--ease)}
+.share-preset-option:hover{border-color:var(--maroon-light)}
+.share-preset-option:has(input:checked){border-color:var(--maroon);background:var(--maroon-tint)}
+.share-preset-option input{flex:0 0 auto;margin:0}
+.share-preset-option span{flex:1}
 #custom-shares[hidden] { display: none; }
 
 /* ==========================================================================
@@ -417,7 +420,12 @@ th,td{text-align:left;padding:16px;border-bottom:1px solid var(--border)}
    Same maroon/gold palette as the old top bar, moved to a persistent rail so
    the page keeps one fixed anchor while content changes.
    ========================================================================== */
-.has-sidebar .container{width:min(1120px,100%);margin:var(--sp-8) 0 90px;padding:0 clamp(16px,4vw,40px)}
+/* `margin:... 0 ...` here left-aligned the whole column inside the area
+   beside the sidebar, so every pixel of leftover width collected on the
+   right. `auto` centres it; the wider cap lets content use the space a
+   large screen actually has. */
+.has-sidebar .container{width:min(1280px,100%);margin:var(--sp-8) auto 90px;
+                        padding:0 clamp(16px,4vw,40px)}
 .has-sidebar{padding-left:248px}
 
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:248px;z-index:40;display:flex;flex-direction:column;
@@ -436,12 +444,34 @@ th,td{text-align:left;padding:16px;border-bottom:1px solid var(--border)}
 .sidebar-link.is-active{background:rgba(255,255,255,.16);color:#fff;box-shadow:inset 3px 0 0 var(--gold)}
 .sidebar-link svg{flex:0 0 18px;opacity:.9}
 
-.sidebar-footer{margin-top:auto;padding-top:var(--sp-4);border-top:1px solid rgba(255,255,255,.18)}
-.sidebar-user{margin:0 0 8px;padding:0 12px;color:rgba(255,255,255,.7);font-size:.8rem;font-weight:600;
-              overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sidebar-logout{width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-sm);
-                background:transparent;color:#fff;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer}
-.sidebar-logout:hover{background:rgba(255,255,255,.14)}
+.sidebar-footer{margin-top:auto;padding-top:var(--sp-4);border-top:1px solid rgba(255,255,255,.18);
+                position:relative}
+
+.user-button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;
+             border-radius:var(--radius-sm);background:transparent;color:#fff;font:inherit;
+             cursor:pointer;text-align:left;transition:background .16s var(--ease)}
+.user-button:hover,.user-button[aria-expanded=true]{background:rgba(255,255,255,.14)}
+.user-avatar{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;
+             background:var(--gold);color:var(--maroon-dark);font-weight:800;font-size:.92rem;
+             line-height:1;text-transform:uppercase}
+.user-name{flex:1;min-width:0;font-size:.9rem;font-weight:600;
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-chevron{flex:0 0 16px;opacity:.75;transition:transform .16s var(--ease)}
+.user-button[aria-expanded=true] .user-chevron{transform:rotate(180deg)}
+
+/* Opens upward: the trigger sits at the bottom of the rail. */
+.user-menu{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:50;overflow:hidden;
+           background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+           box-shadow:var(--shadow-md)}
+.user-menu[hidden]{display:none}
+.user-menu form{margin:0}
+.user-menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 13px;border:0;
+                background:transparent;color:var(--text-primary);font:inherit;font-size:.88rem;
+                font-weight:600;text-align:left;text-decoration:none;cursor:pointer}
+.user-menu-item:hover{background:var(--maroon-tint);color:var(--maroon)}
+.user-menu-item svg{flex:0 0 16px;opacity:.8}
+.user-menu-item--danger{border-top:1px solid var(--border);color:var(--danger)}
+.user-menu-item--danger:hover{background:var(--danger-bg);color:var(--danger)}
 
 .sidebar-toggle{display:none;position:fixed;top:14px;left:14px;z-index:60;width:40px;height:40px;
                 align-items:center;justify-content:center;border:0;border-radius:10px;
@@ -451,7 +481,7 @@ th,td{text-align:left;padding:16px;border-bottom:1px solid var(--border)}
 /* ---------- Dashboard ---------- */
 .greeting{margin-bottom:var(--sp-6)}
 .greeting h1{margin:0 0 6px;font-size:clamp(1.6rem,3.4vw,2.1rem);letter-spacing:-.02em}
-.greeting p{margin:0;color:var(--text-secondary);max-width:56ch}
+.greeting p{margin:0;color:var(--text-secondary)}
 
 .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--sp-4);margin-bottom:var(--sp-6)}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
@@ -550,4 +580,41 @@ body.ai-modal-open{overflow:hidden}
 @media (min-width:901px){ .sidebar-scrim{display:none} }
 @media (prefers-reduced-motion:reduce){
   .sidebar,.ai-fab{transition:none}
+}
+
+/* ---------- Account / settings ---------- */
+.settings-page{max-width:620px;margin:0 auto}
+.settings-page h1{margin:var(--sp-4) 0 4px;font-size:clamp(1.5rem,3vw,1.9rem);letter-spacing:-.02em}
+.settings-card{margin-top:var(--sp-6);padding:28px}
+.settings-card h2{margin:0 0 4px;font-size:1.05rem;font-weight:800}
+.settings-card .auth-form{margin-top:var(--sp-6)}
+.settings-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:var(--sp-6)}
+.settings-done{display:flex;align-items:center;gap:var(--sp-4)}
+.settings-done-mark{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;
+                    border-radius:50%;background:var(--success-bg);color:var(--success)}
+.settings-done h2{margin:0 0 2px}
+
+/* ==========================================================================
+   Home fits one screen
+   Home is a glance: overall standing plus the last three subjects opened.
+   The full, scrollable roster lives on My Subjects, so nothing is hidden by
+   this -- "See all subjects" is always one click away.
+
+   Only applied when the window is actually tall and wide enough. On short or
+   narrow screens the page scrolls normally, because locking overflow there
+   would put content permanently out of reach.
+   ========================================================================== */
+@media (min-width:901px) and (min-height:700px){
+  body.page-home{overflow:hidden}
+  .page-home .container{height:100vh;margin-top:var(--sp-6);margin-bottom:0;
+                        display:flex;flex-direction:column;overflow:hidden}
+  .page-home .greeting{margin-bottom:var(--sp-4)}
+  .page-home .stat-row{margin-bottom:var(--sp-4)}
+  .page-home .stat-card{padding:14px 18px}
+  .page-home .stat-value{font-size:1.7rem}
+  .page-home #subjects-section{flex:1;min-height:0;display:flex;flex-direction:column}
+  /* Exactly one row of three, so Home never turns into a wall of cards. */
+  .page-home .subject-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-4)}
+  .page-home .subject-card-body{padding:18px}
+  .page-home .subject-card-footer{padding:10px 18px}
 }

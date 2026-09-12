@@ -13,8 +13,9 @@ from django.utils import timezone
 
 from .forms import SubjectForm, preset_for
 
-# How many subjects Home shows under "Recently viewed".
-RECENT_SUBJECT_COUNT = 6
+# How many subjects Home shows under "Recently viewed". Home is meant to
+# fit one screen, so this is a layout constraint as much as a limit.
+RECENT_SUBJECT_COUNT = 3
 from .grading import build_target_plan, calculate_grade
 from .models import ClassStandingAssessment, FINAL, GRADING_PERIOD_CHOICES, MajorExam, MIDTERM, PRELIM, Subject
 
@@ -154,8 +155,7 @@ def subject_create(request):
                     subject=subject, grading_period=period,
                     score=_decimal_or_none(request.POST.get(f"{prefix}_exam_score")),
                     highest_possible_score=_decimal_or_none(
-                        request.POST.get(f"{prefix}_exam_hps")) or Decimal("100"),
-                    weight=_decimal_or_none(request.POST.get(f"{prefix}_exam_weight")) or Decimal("33.33"))
+                        request.POST.get(f"{prefix}_exam_hps")) or Decimal("100"))
         messages.success(request, f'"{subject.name}" was added.')
         return redirect("subjects:dashboard")
     terms = [{"code": p, "label": PERIOD_LABELS[p], "prefix": PERIOD_PREFIX[p]} for p in PERIODS]
@@ -254,7 +254,6 @@ def major_exam_update(request, pk, period):
     exam.score = _decimal_or_none(request.POST.get("score"))
     exam.highest_possible_score = _decimal_or_none(
         request.POST.get("highest_possible_score")) or Decimal("100")
-    exam.weight = _decimal_or_none(request.POST.get("weight")) or Decimal("33.33")
     exam.save()
     context = _subject_context(subject)
     return render(request, "subjects/_term.html", _period_context(context, period))

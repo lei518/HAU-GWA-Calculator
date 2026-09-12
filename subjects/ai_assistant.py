@@ -17,6 +17,7 @@ from decimal import ROUND_CEILING
 from django.conf import settings
 
 from .grading import (
+    required_average_for_remaining_exams,
     D, GRADE_TABLE, best_possible, build_target_plan, calculate_grade,
     class_standing_breakdown, computed_average, grade_from_transmuted,
     major_exam_breakdown, points_needed_on_hypothetical_assessment,
@@ -58,9 +59,9 @@ Next Activity (Class Standing[ - Estimated [assessment_max_score] pts])
 - Recommended score on next task: [required_score] / [assessment_max_score] ([required_percent]%)
 Note: [see rule 3]
 
-Final Exam (Major Exams)
+[exam_section_label] (Major Exams)
 - Your current score: [completed_major_exams_points] / [completed_major_exams_possible] ([completed_major_exams_percent]%)
-- Recommended score on Final Exam: [required_score] / [assessment_max_score] ([required_percent]%)
+- Recommended score on [exam_section_label]: [required_score] / [assessment_max_score] ([required_percent]%)
 Note: [see rule 4]
 
 Tip: [supporting_details.tip_text, word for word]
@@ -106,9 +107,14 @@ Tip: [supporting_details.tip_text, word for word]
    - "exceeds_maximum" true: "This is above the maximum, so [target_grade]
      cannot be reached through this exam alone."
    - "no_remaining_exams": "No major exam is left to take."
-   - "multiple_remaining_exams": "[remaining_count] major exams remain
-     unscored, so a single combined score cannot be given without knowing
-     how they will be split."
+   - "multiple_remaining_exams": "Your [remaining_exam_labels] exams are both
+     still to come, so this is the average they need to reach together --
+     how you split it between them is up to you." If "exceeds_maximum" is
+     true, write instead "Even perfect scores on both remaining exams would
+     not reach [target_grade] on their own, so your class standing has to
+     improve as well." If "already_sufficient" is true, write "Your recorded
+     work already covers this component, provided your class standing
+     holds."
    - otherwise: "This is the minimum needed on your [exam_period_label]
      exam, assuming your class standing stays at
      [assumes_class_standing_average_stays_at]%. Doing only the minimums in
@@ -404,7 +410,9 @@ def _build_recommendations(subject, cs, cs_assessments, me, major_exams, plan, c
                     "type": "known_remaining_exam",
                     "is_standalone_scenario": True,
                     "assumes_class_standing_average_stays_at": _num(cs.current_average),
-                    "exam_period_label": _PERIOD_LABELS.get(me_exam.grading_period, me_exam.grading_period)})
+                    "exam_period_label": _PERIOD_LABELS.get(me_exam.grading_period, me_exam.grading_period),
+                    "exam_section_label": _exam_section_label([_PERIOD_LABELS.get(
+                        me_exam.grading_period, me_exam.grading_period)])})
         return rec
 
     cs_rec = None
@@ -458,8 +466,7 @@ def _build_recommendations(subject, cs, cs_assessments, me, major_exams, plan, c
                     me_exam.grading_period, me_exam.grading_period),
             }
         elif me_multi:
-            me_rec = {**me_current, "type": "multiple_remaining_exams",
-                      "remaining_count": len(me.remaining_exams)}
+            me_rec = _multi_exam_rec(me_current, me, plan)
         else:
             me_rec = {**me_current, "type": "no_remaining_exams"}
         return cs_rec, me_rec
@@ -467,7 +474,7 @@ def _build_recommendations(subject, cs, cs_assessments, me, major_exams, plan, c
     if plan.cs_required_avg is not None and not cs_flexible:
         cs_rec = {**cs_current, "type": "no_data_to_recommend"}
     if plan.me_required_avg is not None and me_multi:
-        me_rec = {**me_current, "type": "multiple_remaining_exams", "remaining_count": len(me.remaining_exams)}
+        me_rec = _multi_exam_rec(me_current, me, plan)
     elif plan.me_required_avg is not None and not me_flexible:
         me_rec = {**me_current, "type": "no_remaining_exams"}
 
@@ -526,7 +533,9 @@ def _build_recommendations(subject, cs, cs_assessments, me, major_exams, plan, c
         me_rec = _exact_recommendation(me_points_needed, me_hps)
         me_rec.update({**me_current, "assessment_max_score": _num(me_hps), "is_estimate": False,
                        "type": "known_remaining_exam", "combined_with_class_standing": True,
-                       "exam_period_label": _PERIOD_LABELS.get(me_exam.grading_period, me_exam.grading_period)})
+                       "exam_period_label": _PERIOD_LABELS.get(me_exam.grading_period, me_exam.grading_period),
+                    "exam_section_label": _exam_section_label([_PERIOD_LABELS.get(
+                        me_exam.grading_period, me_exam.grading_period)])})
 
     return cs_rec, me_rec
 
@@ -628,7 +637,7 @@ def _build_me_note(plan, cs_rec, me_rec, cs, me):
                 f"at {assumed}%.")
     return f"This is enough only if your class standing stays at {assumed}%."
 
-def _status_line(plan, both_sufficient):
+def _status_line(plan, both_sufficient, cs_rec=None, me_rec=None):
     """The Status line's parenthetical, built here rather than by the model
     so the verdict and its one-line reason always agree with each other."""
     if plan.status == "impossible":
@@ -640,6 +649,18 @@ def _status_line(plan, both_sufficient):
         return "Achievable, but tight (needs close to a perfect remaining performance)"
     if both_sufficient:
         return "Achievable (already covered by your recorded work, if you hold steady)"
+    # "Either route is enough" is only true when each component can actually
+    # carry the target alone. When one is maxed out -- no class standing work
+    # left, or a score above 100% required -- saying so would point the
+    # student at a route that does not exist.
+    cs_dead = bool(cs_rec) and cs_rec.get("exceeds_maximum")
+    me_dead = bool(me_rec) and me_rec.get("exceeds_maximum")
+    if cs_dead and me_dead:
+        return "Achievable only by improving both components together"
+    if cs_dead:
+        return "Achievable, but only through your major exams"
+    if me_dead:
+        return "Achievable, but only through your class standing"
     return "Achievable (either route below is enough on its own)"
 
 def _cs_average_after(cs, added_points, added_hps):
@@ -652,6 +673,37 @@ def _cs_average_after(cs, added_points, added_hps):
     if total_hps <= 0:
         return None
     return (cs.scored_points + D(added_points)) / total_hps * D("100")
+
+def _multi_exam_rec(me_current, me, plan):
+    """Recommendation for two or more unscored exams.
+
+    "A single combined score cannot be given" is true but useless: the
+    average the remaining papers must hit together IS computable, and that
+    is the number the student can act on."""
+    labels = [_PERIOD_LABELS.get(e.grading_period, e.grading_period) for e in me.remaining_exams]
+    rec = {
+        **me_current,
+        "type": "multiple_remaining_exams",
+        "remaining_count": len(me.remaining_exams),
+        "remaining_exam_labels": labels,
+        "exam_section_label": _exam_section_label(labels),
+    }
+    if plan.me_required_avg is not None:
+        needed = required_average_for_remaining_exams(me, plan.me_required_avg)
+        if needed is not None:
+            rec["required_average_across_remaining"] = _num(needed)
+            rec["exceeds_maximum"] = needed > D("100")
+            rec["already_sufficient"] = needed <= 0
+    return rec
+
+def _exam_section_label(labels):
+    """Heading for the exam section. Hardcoding "Final Exam" is wrong
+    whenever the outstanding exam is a Midterm, or when several remain."""
+    if not labels:
+        return "Major Exams"
+    if len(labels) == 1:
+        return f"{labels[0]} Exam"
+    return " and ".join([", ".join(labels[:-1]), labels[-1]]) + " Exams"
 
 def _build_tip(plan, cs_rec, me_rec):
     """Compose the Tip deterministically, from the same Django-computed
@@ -675,6 +727,12 @@ def _build_tip(plan, cs_rec, me_rec):
 
     # Achievable. Name the single cheapest remaining requirement, so the
     # student knows the one number that actually has to be cleared.
+    if (me_rec and me_rec.get("type") == "multiple_remaining_exams"
+            and me_rec.get("required_average_across_remaining") is not None
+            and not me_rec.get("already_sufficient") and not me_rec.get("exceeds_maximum")):
+        return (f"Across your {me_rec['remaining_count']} remaining major exams you need to "
+                f"average {me_rec['required_average_across_remaining']}% to stay on for {target}.")
+
     if me_rec and me_rec.get("type") == "known_remaining_exam" and not me_rec.get("already_sufficient"):
         label = me_rec.get("exam_period_label", "final")
         return (f"Your {label} exam is the one thing left to clear: "
@@ -733,7 +791,6 @@ def build_context(subject, cs_assessments, major_exams, question):
                 "grading_period": e.grading_period,
                 "score": _num(e.score) if e.score is not None else None,
                 "highest_possible_score": _num(e.highest_possible_score),
-                "weight_percent": _num(e.weight),
                 "scored_yet": e.score is not None,
             }
             for e in major_exams
@@ -803,7 +860,8 @@ def build_context(subject, cs_assessments, major_exams, question):
                 "tip_text": _build_tip(plan, cs_rec, me_rec),
                 "status_line": _status_line(plan, bool(
                     cs_rec and me_rec
-                    and cs_rec.get("already_sufficient") and me_rec.get("already_sufficient"))),
+                    and cs_rec.get("already_sufficient") and me_rec.get("already_sufficient")),
+                    cs_rec, me_rec),
             },
         }
 

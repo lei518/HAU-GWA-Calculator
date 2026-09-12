@@ -17,7 +17,8 @@
 {% else %}
 <div class="card empty-state">
   <h3>No subjects yet.</h3>
-  <p class="muted">Add your first subject to start calculating your grades and GWA.</p>
+  <p class="muted">You will need its units, its passing average, and how your
+     instructor splits class standing against major exams.</p>
   <a class="primary button" href="{% url 'subjects:subject_create' %}">+ Add Subject</a>
 </div>
 {% endif %}

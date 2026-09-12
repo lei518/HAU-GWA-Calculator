@@ -52,7 +52,8 @@ subject's recorded scores.
       {% else %}
         <div class="empty-state">
           <h3>No subjects yet.</h3>
-          <p class="muted">Add a subject and enter some scores, then the assistant can work out what you need.</p>
+          <p class="muted">The assistant works from recorded scores, so there is nothing to
+           answer from yet.</p>
           <a class="primary button" href="{% url 'subjects:subject_create' %}">Add a subject</a>
         </div>
       {% endif %}

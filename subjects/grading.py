@@ -44,12 +44,12 @@ def major_exam_average(major_exams):
     entered = [e for e in major_exams if e.score is not None]
     if not entered:
         return D("0")
-    total_weight = sum((D(e.weight) for e in entered), D("0"))
+    total_weight = D(len(entered))
     if total_weight <= 0:
-        raise ValueError("Active major-exam weight total must be greater than zero.")
+        raise ValueError("At least one major exam must be entered.")
     result = D("0")
     for e in entered:
-        result += D(e.weight) / total_weight * percentage(e.score, e.highest_possible_score)
+        result += percentage(e.score, e.highest_possible_score) / total_weight
     return result
 
 def computed_average(subject, csa, mea, cs_active, me_active):
@@ -178,8 +178,8 @@ def points_needed_on_hypothetical_assessment(breakdown, required_average, hypoth
 
 @dataclass(frozen=True)
 class MajorExamBreakdown:
-    """Major Exam is inherently weight/percentage-based (each period has its
-    own HPS and weight, so raw scores aren't directly additive across
+    """Major Exam is inherently percentage-based (each period has its own
+    HPS, so raw scores aren't directly additive across
     periods the way Class Standing points are) -- scored_points here is a
     weighted-percentage sum, not a raw point total. Individual exams still
     carry their own real score/HPS points (see remaining_exams / the exam
@@ -198,12 +198,15 @@ class MajorExamBreakdown:
 def major_exam_breakdown(major_exams):
     scored = [e for e in major_exams if e.score is not None]
     unscored = [e for e in major_exams if e.score is None]
-    scored_weight = sum((D(e.weight) for e in scored), D("0"))
+    # Every grading period counts the same: Prelim, Midterm and Final are
+    # each one equal share of the Major Exam component, regardless of how
+    # many points their papers happen to be out of.
+    scored_weight = D(len(scored))
     weighted_scored = D("0")
     for e in scored:
-        weighted_scored += D(e.weight) * percentage(e.score, e.highest_possible_score)
+        weighted_scored += percentage(e.score, e.highest_possible_score)
     current_average = (weighted_scored / scored_weight) if scored_weight > 0 else D("0")
-    remaining_weight = sum((D(e.weight) for e in unscored), D("0"))
+    remaining_weight = D(len(unscored))
     max_points = weighted_scored + remaining_weight * D("100")
     max_hps = scored_weight + remaining_weight
     max_average = (max_points / max_hps) if max_hps > 0 else D("0")
@@ -217,7 +220,7 @@ def required_score_for_single_exam(breakdown, required_average):
     if required_average is None or len(breakdown.remaining_exams) != 1:
         return None
     exam = breakdown.remaining_exams[0]
-    weight = D(exam.weight)
+    weight = D("1")
     if weight <= 0:
         return None
     total_weight = breakdown.scored_hps + weight
@@ -286,6 +289,22 @@ def perfect_cs_points_needed(cs, required_average):
     points = cs.scored_points + cs.remaining_hps
     hps = cs.scored_hps + cs.remaining_hps
     return max(D("0"), (r * hps - points) / (D("1") - r))
+
+def required_average_for_remaining_exams(me, required_me_average):
+    """The average percentage needed ACROSS every still-unscored major exam.
+
+    When more than one exam is left, no single score answers "what do I
+    need"; the honest answer is the average the remaining papers must hit
+    together. Each grading period is one equal share, so this solves
+    (scored_total + n_remaining * x) / n_total = required, which is exact
+    and makes no assumption about how the student splits it between papers.
+    Returns None when nothing is outstanding."""
+    remaining = len(me.remaining_exams)
+    if remaining <= 0:
+        return None
+    scored_count = me.scored_hps  # one unit per scored exam
+    total = scored_count + D(remaining)
+    return (D(required_me_average) * total - me.scored_points) / D(remaining)
 
 def best_possible(subject, cs, me, extra_cs_hps=None):
     """The highest Computed Average/grade reachable from here, assuming a

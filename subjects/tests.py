@@ -24,10 +24,10 @@ class GradingEngineTests(TestCase):
             subject=self.subject, name=name, grading_period=period, score=score,
             highest_possible_score=hps)
 
-    def add_exam(self, period, score=None, hps=100, weight="33.33"):
+    def add_exam(self, period, score=None, hps=100):
         return MajorExam.objects.create(
             subject=self.subject, grading_period=period, score=score,
-            highest_possible_score=hps, weight=weight)
+            highest_possible_score=hps)
 
     def test_class_standing_average(self):
         self.add_cs("Quiz", "PRELIM", score=18, hps=20)
@@ -456,7 +456,7 @@ class TargetGradeWithPendingAssessmentsTests(TestCase):
     def test_pending_assessment_expands_maximum_possible(self):
         ClassStandingAssessment.objects.create(
             subject=self.subject, name="Activity 1", grading_period="PRELIM", score=30, highest_possible_score=50)
-        MajorExam.objects.create(subject=self.subject, grading_period="PRELIM", score=60, highest_possible_score=100, weight=Decimal("100"))
+        MajorExam.objects.create(subject=self.subject, grading_period="PRELIM", score=60, highest_possible_score=100)
         cs_assessments = list(self.subject.class_standing_assessments.all())
         major_exams = list(self.subject.major_exams.all())
 
@@ -616,9 +616,9 @@ class RequiredScoreRecommendationTests(TestCase):
             subject=subject, name="Activity 1", grading_period="PRELIM", score=18, highest_possible_score=20)
         pending = ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 2", grading_period="PRELIM", score=None, highest_possible_score=20)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100, weight=Decimal("33.34"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -653,10 +653,10 @@ class RequiredScoreRecommendationTests(TestCase):
             subject=subject, name="Activity 1", grading_period="PRELIM", score=15, highest_possible_score=20)
         pending_cs = ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 2", grading_period="PRELIM", score=None, highest_possible_score=20)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=70, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=70, highest_possible_score=100, weight=Decimal("33.33"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=70, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=70, highest_possible_score=100)
         pending_me = MajorExam.objects.create(
-            subject=subject, grading_period="FINAL", score=None, highest_possible_score=100, weight=Decimal("33.34"))
+            subject=subject, grading_period="FINAL", score=None, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -685,9 +685,9 @@ class RequiredScoreRecommendationTests(TestCase):
             subject=subject, name="Activity 1", grading_period="PRELIM", score=10, highest_possible_score=20)
         ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 2", grading_period="PRELIM", score=None, highest_possible_score=20)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=60, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=60, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=60, highest_possible_score=100, weight=Decimal("33.34"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=60, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=60, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=60, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -705,10 +705,10 @@ class RequiredScoreRecommendationTests(TestCase):
         subject = self.make_subject()
         ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 1", grading_period="PRELIM", score=19, highest_possible_score=20)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=85, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=85, highest_possible_score=100, weight=Decimal("33.33"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=85, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=85, highest_possible_score=100)
         pending_exam = MajorExam.objects.create(
-            subject=subject, grading_period="FINAL", score=None, highest_possible_score=100, weight=Decimal("33.34"))
+            subject=subject, grading_period="FINAL", score=None, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -746,9 +746,9 @@ class RequiredScoreRecommendationTests(TestCase):
             subject=subject, name="Activity 3", grading_period="PRELIM", score=36, highest_possible_score=40)
         ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 4", grading_period="PRELIM", score=18, highest_possible_score=20)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100, weight=Decimal("33.34"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -767,9 +767,9 @@ class RequiredScoreRecommendationTests(TestCase):
             subject=subject, name="Activity 1", grading_period="PRELIM", score=45, highest_possible_score=50)
         pending = ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 2", grading_period="PRELIM", score=None, highest_possible_score=35)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100, weight=Decimal("33.34"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -784,9 +784,9 @@ class RequiredScoreRecommendationTests(TestCase):
         subject = self.make_subject()
         # No Class Standing assessments recorded at all -- there is no
         # pattern to infer a hypothetical next assessment's HPS from.
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=70, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=70, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=70, highest_possible_score=100, weight=Decimal("33.34"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=70, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=70, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=70, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -804,9 +804,9 @@ class RequiredScoreRecommendationTests(TestCase):
             subject=subject, name="Activity 1", grading_period="PRELIM", score=15, highest_possible_score=20)
         ClassStandingAssessment.objects.create(
             subject=subject, name="Activity 2", grading_period="PRELIM", score=None, highest_possible_score=20)
-        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100, weight=Decimal("33.34"))
+        MajorExam.objects.create(subject=subject, grading_period="PRELIM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="MIDTERM", score=80, highest_possible_score=100)
+        MajorExam.objects.create(subject=subject, grading_period="FINAL", score=80, highest_possible_score=100)
 
         cs_assessments = list(subject.class_standing_assessments.all())
         major_exams = list(subject.major_exams.all())
@@ -838,9 +838,9 @@ class GreatBooksRegressionTests(TestCase):
             subject=self.subject, name="Activity 3", grading_period="MIDTERM", score=17, highest_possible_score=20)
         ClassStandingAssessment.objects.create(
             subject=self.subject, name="Activity 4", grading_period="MIDTERM", score=40, highest_possible_score=50)
-        MajorExam.objects.create(subject=self.subject, grading_period="PRELIM", score=45, highest_possible_score=50, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=self.subject, grading_period="MIDTERM", score=46, highest_possible_score=50, weight=Decimal("33.33"))
-        MajorExam.objects.create(subject=self.subject, grading_period="FINAL", score=None, highest_possible_score=100, weight=Decimal("33.33"))
+        MajorExam.objects.create(subject=self.subject, grading_period="PRELIM", score=45, highest_possible_score=50)
+        MajorExam.objects.create(subject=self.subject, grading_period="MIDTERM", score=46, highest_possible_score=50)
+        MajorExam.objects.create(subject=self.subject, grading_period="FINAL", score=None, highest_possible_score=100)
         self.cs_assessments = list(self.subject.class_standing_assessments.all())
         self.major_exams = list(self.subject.major_exams.all())
 
@@ -1128,7 +1128,7 @@ class SubjectWeightingTests(TestCase):
             score=45, highest_possible_score=50)
         MajorExam.objects.create(
             subject=subject, grading_period="PRELIM", score=40,
-            highest_possible_score=50, weight=Decimal("33.33"))
+            highest_possible_score=50)
 
         response = self.client.post(
             reverse("subjects:subject_update", args=[subject.pk]),
@@ -1182,10 +1182,10 @@ class IndependentScenarioTests(TestCase):
         for period, score in [("PRELIM", 45), ("MIDTERM", 46)]:
             MajorExam.objects.create(
                 subject=self.subject, grading_period=period, score=score,
-                highest_possible_score=50, weight=Decimal("33.33"))
+                highest_possible_score=50)
         MajorExam.objects.create(
             subject=self.subject, grading_period="FINAL", score=None,
-            highest_possible_score=100, weight=Decimal("33.33"))
+            highest_possible_score=100)
         self.cs = list(self.subject.class_standing_assessments.all())
         self.me = list(self.subject.major_exams.all())
 
@@ -1532,3 +1532,301 @@ class AuthPageTests(TestCase):
         # rendered the wordmark dark-on-maroon and effectively invisible.
         css = (settings.BASE_DIR / "static" / "css" / "app.css").read_text(encoding="utf-8")
         self.assertIn(".nav .brand{", css)
+
+
+class StylesheetSanityTests(TestCase):
+    """Cheap guards for CSS mistakes that render wrong without erroring."""
+
+    def css(self):
+        return (settings.BASE_DIR / "static" / "css" / "app.css").read_text(encoding="utf-8")
+
+    def test_radios_are_exempt_from_the_full_width_input_rule(self):
+        # `input,select{width:100%;...}` turns a bare radio into a wide
+        # bordered box unless it is explicitly excluded.
+        css = self.css().replace(" ", "")
+        self.assertIn("input[type=radio]", css)
+        self.assertIn("input[type=checkbox],input[type=radio]{width:auto", css)
+
+    def test_no_undefined_custom_properties(self):
+        # var(--name, fallback) fails silently: an undefined variable just
+        # uses the fallback, which is how an off-palette indigo slipped into
+        # the weighting selector.
+        import re
+        css = self.css()
+        declared = set(re.findall(r"(--[a-z0-9-]+)\s*:", css))
+        used = set(re.findall(r"var\((--[a-z0-9-]+)", css))
+        self.assertEqual(sorted(used - declared), [])
+
+
+class EqualPeriodWeightTests(TestCase):
+    """With the per-exam weight field gone, every grading period is one equal
+    share of the Major Exam component -- regardless of how many points that
+    period's paper happens to be out of."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="weights2", password="pass12345")
+        self.subject = Subject.objects.create(
+            student=self.user, name="Great Books", units=3, passing_average=50,
+            class_standing_percent_share=70, major_exam_percent_share=30)
+
+    def exam(self, period, score, hps):
+        return MajorExam.objects.create(
+            subject=self.subject, grading_period=period, score=score, highest_possible_score=hps)
+
+    def test_a_bigger_paper_does_not_count_for_more(self):
+        # Prelim and Midterm are out of 50, the Final out of 100. Equal
+        # shares give (90 + 92 + 100) / 3 = 94.00. Summing raw points would
+        # give 95.50, because the Final would carry double the weight.
+        self.exam("PRELIM", 45, 50)
+        self.exam("MIDTERM", 46, 50)
+        self.exam("FINAL", 100, 100)
+        breakdown = major_exam_breakdown(list(self.subject.major_exams.all()))
+        self.assertEqual(breakdown.current_average.quantize(Decimal("0.01")), Decimal("94.00"))
+
+    def test_unscored_periods_are_excluded_from_the_current_average(self):
+        self.exam("PRELIM", 45, 50)
+        self.exam("MIDTERM", 46, 50)
+        self.exam("FINAL", None, 100)
+        breakdown = major_exam_breakdown(list(self.subject.major_exams.all()))
+        # (90 + 92) / 2, not (90 + 92 + 0) / 3.
+        self.assertEqual(breakdown.current_average.quantize(Decimal("0.01")), Decimal("91.00"))
+        self.assertEqual(breakdown.max_average.quantize(Decimal("0.01")), Decimal("94.00"))
+
+    def test_single_exam_is_the_whole_component(self):
+        self.exam("PRELIM", 80, 100)
+        breakdown = major_exam_breakdown(list(self.subject.major_exams.all()))
+        self.assertEqual(breakdown.current_average.quantize(Decimal("0.01")), Decimal("80.00"))
+
+    def test_weight_input_is_gone_from_the_forms(self):
+        self.client.force_login(self.user)
+        body = self.client.get(reverse("subjects:subject_detail", args=[self.subject.pk])).content.decode()
+        self.assertNotIn('name="weight"', body)
+        self.assertNotIn("Weight %", body)
+        body = self.client.get(reverse("subjects:subject_create")).content.decode()
+        self.assertNotIn("_exam_weight", body)
+
+
+class MultipleRemainingExamTests(TestCase):
+    """When two or more major exams are unscored, "a single score cannot be
+    given" is true but useless. The average the remaining papers must reach
+    together is exact and actionable, so that is what gets reported."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="multi", password="pass12345")
+        self.client.force_login(self.user)
+        self.subject = Subject.objects.create(
+            student=self.user, name="Subj", units=3, passing_average=50,
+            class_standing_percent_share=60, major_exam_percent_share=40)
+        for name, period, score, hps in [
+            ("Seatwork", "PRELIM", 20, 20), ("Seatwork 2", "PRELIM", 20, 20),
+            ("Quiz", "MIDTERM", 92, 100)]:
+            ClassStandingAssessment.objects.create(
+                subject=self.subject, name=name, grading_period=period,
+                score=score, highest_possible_score=hps)
+        MajorExam.objects.create(subject=self.subject, grading_period="PRELIM",
+                                 score=67, highest_possible_score=100)
+        for period in ("MIDTERM", "FINAL"):
+            MajorExam.objects.create(subject=self.subject, grading_period=period,
+                                     score=None, highest_possible_score=100)
+        self.cs = list(self.subject.class_standing_assessments.all())
+        self.me = list(self.subject.major_exams.all())
+
+    def rec(self, target="1.25"):
+        ctx = ai_assistant.build_context(self.subject, self.cs, self.me, f"Can I still get {target}?")
+        return ctx["target_analysis"]
+
+    def test_required_average_across_remaining_exams_is_reported(self):
+        me_rec = self.rec()["recommendation"]["major_exam"]
+        self.assertEqual(me_rec["type"], "multiple_remaining_exams")
+        self.assertEqual(me_rec["remaining_count"], 2)
+        self.assertAlmostEqual(me_rec["required_average_across_remaining"], 84.36, places=2)
+
+    def test_that_average_actually_reaches_the_target(self):
+        required = minimum_computed_average_for_grade("1.25", self.subject.passing_average)
+        needed = Decimal(str(self.rec()["recommendation"]["major_exam"]
+                             ["required_average_across_remaining"]))
+        for exam in self.me:
+            if exam.score is None:
+                exam.score = needed
+        self.assertGreaterEqual(
+            calculate_grade(self.subject, self.cs, self.me).computed_average, required)
+
+    def test_heading_label_names_the_actual_outstanding_exams(self):
+        # Hardcoding "Final Exam" is wrong whenever a Midterm is also due.
+        me_rec = self.rec()["recommendation"]["major_exam"]
+        self.assertEqual(me_rec["remaining_exam_labels"], ["Midterm", "Final"])
+        self.assertEqual(me_rec["exam_section_label"], "Midterm and Final Exams")
+
+    def test_status_does_not_claim_a_dead_class_standing_route(self):
+        # Every class standing assessment is scored, so that component cannot
+        # move. Saying "either route is enough" would point at a route that
+        # does not exist.
+        details = self.rec()["supporting_details"]
+        self.assertEqual(details["status_line"], "Achievable, but only through your major exams")
+        self.assertNotIn("either route", details["status_line"])
+
+    def test_tip_names_the_remaining_exam_average(self):
+        details = self.rec()["supporting_details"]
+        self.assertIn("84.36", details["tip_text"])
+        self.assertIn("2 remaining major exams", details["tip_text"])
+
+
+class PasswordChangeTests(TestCase):
+    """Password change uses Django's built-in views, which rotate the session
+    auth hash on success -- so the student must stay signed in afterwards."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="pwuser", password="OldPass!2345")
+        self.client.force_login(self.user)
+
+    def test_page_requires_login(self):
+        self.client.logout()
+        response = self.client.get(reverse("password_change"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
+
+    def test_form_renders_with_styled_fields_and_no_label_colons(self):
+        response = self.client.get(reverse("password_change"))
+        body = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="auth-field', body)
+        self.assertIn("Old password", body)
+        self.assertNotIn("Old password:", body)
+
+    def test_successful_change_updates_the_password(self):
+        response = self.client.post(reverse("password_change"), {
+            "old_password": "OldPass!2345",
+            "new_password1": "BrandNew!6789",
+            "new_password2": "BrandNew!6789"})
+        self.assertRedirects(response, reverse("password_change_done"))
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("BrandNew!6789"))
+        self.assertFalse(self.user.check_password("OldPass!2345"))
+
+    def test_user_stays_signed_in_after_changing_it(self):
+        self.client.post(reverse("password_change"), {
+            "old_password": "OldPass!2345",
+            "new_password1": "BrandNew!6789",
+            "new_password2": "BrandNew!6789"})
+        # A logged-out client would be redirected away from Home.
+        self.assertEqual(self.client.get(reverse("subjects:dashboard")).status_code, 200)
+
+    def test_wrong_old_password_is_rejected_and_shown(self):
+        response = self.client.post(reverse("password_change"), {
+            "old_password": "NotMyPassword!1",
+            "new_password1": "BrandNew!6789",
+            "new_password2": "BrandNew!6789"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("auth-field has-error", response.content.decode())
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("OldPass!2345"))
+
+    def test_mismatched_confirmation_is_rejected(self):
+        response = self.client.post(reverse("password_change"), {
+            "old_password": "OldPass!2345",
+            "new_password1": "BrandNew!6789",
+            "new_password2": "Different!6789"})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("OldPass!2345"))
+
+    def test_account_menu_holds_change_password_and_logout(self):
+        body = self.client.get(reverse("subjects:dashboard")).content.decode()
+        menu = body[body.index('id="user-menu"'):body.index("</aside>")]
+        self.assertIn(reverse("password_change"), menu)
+        self.assertIn(reverse("logout"), menu)
+        self.assertIn("Change password", menu)
+        self.assertIn("Log out", menu)
+
+    def test_avatar_shows_the_username_initial(self):
+        body = self.client.get(reverse("subjects:dashboard")).content.decode()
+        start = body.index('class="user-avatar"')
+        self.assertIn("P", body[start:start + 120])  # username is "pwuser"
+        self.assertIn("pwuser", body)
+
+    def test_account_menu_starts_closed(self):
+        body = self.client.get(reverse("subjects:dashboard")).content.decode()
+        start = body.index('id="user-menu"')
+        opening_tag = body[body.rindex("<", 0, start):body.index(">", start)]
+        self.assertIn("hidden", opening_tag)
+        # An author `display` would defeat the attribute, as it did on the modal.
+        css = (settings.BASE_DIR / "static" / "css" / "app.css").read_text(encoding="utf-8")
+        self.assertIn(".user-menu[hidden]{display:none}", css.replace(" ", ""))
+
+    def test_logout_is_a_post_not_a_link(self):
+        body = self.client.get(reverse("subjects:dashboard")).content.decode()
+        menu = body[body.index('id="user-menu"'):body.index("</aside>")]
+        self.assertIn('method="post"', menu)
+        self.assertIn("csrfmiddlewaretoken", menu)
+
+    def test_done_page_confirms_the_change(self):
+        response = self.client.get(reverse("password_change_done"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Password updated")
+
+
+class LayoutCenteringTests(TestCase):
+    """The content column sits beside a fixed sidebar. With a horizontal
+    margin of 0 it hugs the left edge and all spare width collects on the
+    right, which reads as a broken layout on a wide screen."""
+
+    def css(self):
+        return (settings.BASE_DIR / "static" / "css" / "app.css").read_text(encoding="utf-8")
+
+    def test_sidebar_content_column_is_centred(self):
+        css = self.css().replace(" ", "").replace("\n", "")
+        marker = ".has-sidebar.container{"
+        start = css.index(marker)
+        rule = css[start:css.index("}", start)]
+        self.assertIn("margin:var(--sp-8)auto90px", rule)
+        self.assertNotIn("margin:var(--sp-8)090px", rule)
+
+
+class HomeFitsOneScreenTests(TestCase):
+    """Home is a glance, not a list: three subjects, no page scroll. Nothing
+    is lost, because My Subjects holds the full scrollable roster."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="fits", password="pass12345")
+        self.client.force_login(self.user)
+
+    def make_and_open(self, name):
+        subject = Subject.objects.create(
+            student=self.user, name=name, units=3, passing_average=50,
+            class_standing_percent_share=70, major_exam_percent_share=30)
+        self.client.get(reverse("subjects:subject_detail", args=[subject.pk]))
+        return subject
+
+    def test_home_shows_at_most_three(self):
+        self.assertEqual(RECENT_SUBJECT_COUNT, 3)
+        for i in range(6):
+            self.make_and_open(f"Subject {i}")
+        self.assertEqual(len(self.client.get(reverse("subjects:dashboard")).context["rows"]), 3)
+
+    def test_my_subjects_still_lists_them_all(self):
+        for i in range(6):
+            self.make_and_open(f"Subject {i}")
+        self.assertEqual(len(self.client.get(reverse("subjects:subject_list")).context["rows"]), 6)
+
+    def test_home_carries_the_body_class_the_rule_targets(self):
+        body = self.client.get(reverse("subjects:dashboard")).content.decode()
+        self.assertIn("page-home", body)
+        # The roster page must NOT be locked, or long lists become unreachable.
+        self.assertNotIn("page-home", self.client.get(reverse("subjects:subject_list")).content.decode())
+
+    def test_overflow_lock_is_scoped_to_large_windows(self):
+        # On a short or narrow screen the page must still scroll.
+        css = (settings.BASE_DIR / "static" / "css" / "app.css").read_text(encoding="utf-8")
+        index = css.index("body.page-home{overflow:hidden}")
+        preceding = css[:index]
+        guard = preceding.rindex("@media")
+        self.assertIn("min-height:700px", preceding[guard:])
+        self.assertIn("min-width:901px", preceding[guard:])
+
+    def test_see_all_subjects_link_is_present_when_home_is_capped(self):
+        for i in range(6):
+            self.make_and_open(f"Subject {i}")
+        body = self.client.get(reverse("subjects:dashboard")).content.decode()
+        self.assertIn(reverse("subjects:subject_list"), body)
+        self.assertIn("See all subjects", body)

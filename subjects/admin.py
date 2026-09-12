@@ -21,5 +21,5 @@ class ClassStandingAssessmentAdmin(admin.ModelAdmin):
 
 @admin.register(MajorExam)
 class MajorExamAdmin(admin.ModelAdmin):
-    list_display = ("subject", "grading_period", "score", "highest_possible_score", "weight")
+    list_display = ("subject", "grading_period", "score", "highest_possible_score")
     list_filter = ("grading_period",)

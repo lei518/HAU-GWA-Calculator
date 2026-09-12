@@ -55,10 +55,7 @@
                value="{{ period.major_exam.highest_possible_score|default:100 }}" placeholder="HPS">
       </div>
     </label>
-    <label>Weight <span class="unit-suffix">%</span>
-      <input type="number" step="0.01" min="0" max="100" name="weight" class="term-input"
-             value="{{ period.major_exam.weight|default:'33.33' }}">
-    </label>
+    
     <button type="submit" class="secondary save-btn">Save</button>
   </form>
   </div>

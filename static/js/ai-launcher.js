@@ -77,5 +77,32 @@
       setNav(!sidebar.classList.contains("is-open"));
     });
     if (scrim) scrim.addEventListener("click", function () { setNav(false); });
+
+    // Account menu in the sidebar footer.
+    var userToggle = document.querySelector("[data-user-menu-toggle]");
+    var userMenu = document.querySelector("[data-user-menu]");
+
+    function setUserMenu(open) {
+      if (!userMenu || !userToggle) return;
+      userMenu.hidden = !open;
+      userToggle.setAttribute("aria-expanded", String(open));
+    }
+
+    if (userToggle && userMenu) {
+      userToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setUserMenu(userMenu.hidden);
+      });
+      // Clicking anywhere else dismisses it, which is what a menu should do.
+      document.addEventListener("click", function (e) {
+        if (!userMenu.hidden && !userMenu.contains(e.target)) setUserMenu(false);
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !userMenu.hidden) {
+          setUserMenu(false);
+          userToggle.focus();
+        }
+      });
+    }
   });
 })();

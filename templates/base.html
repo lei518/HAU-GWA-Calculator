@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-<link rel="stylesheet" href="/static/css/app.css?v=8">
+<link rel="stylesheet" href="/static/css/app.css?v=15">
 </head>
-<body class="{% if user.is_authenticated %}has-sidebar{% endif %}">
+<body class="{% if user.is_authenticated %}has-sidebar{% endif %} {% block body_class %}{% endblock %}">
 
 {% if user.is_authenticated %}
 <button class="sidebar-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-sidebar-toggle>
@@ -46,10 +46,31 @@
   </nav>
 
   <div class="sidebar-footer">
-    <p class="sidebar-user">{{ user.get_username }}</p>
-    <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-      <button class="sidebar-logout" type="submit">Log out</button>
-    </form>
+    <button class="user-button" type="button" data-user-menu-toggle
+            aria-haspopup="true" aria-expanded="false" aria-controls="user-menu">
+      <span class="user-avatar" aria-hidden="true">{{ user.get_username|first|upper }}</span>
+      <span class="user-name">{{ user.get_username }}</span>
+      <svg class="user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+    </button>
+
+    <div class="user-menu" id="user-menu" data-user-menu hidden role="menu">
+      <a class="user-menu-item" role="menuitem" href="{% url 'password_change' %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Change password
+      </a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <button class="user-menu-item user-menu-item--danger" role="menuitem" type="submit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+          Log out
+        </button>
+      </form>
+    </div>
   </div>
 </aside>
 {% else %}
@@ -79,6 +100,6 @@
 </button>
 {% include "_assistant_modal.html" %}
 {% endif %}
-<script src="/static/js/ai-launcher.js?v=8"></script>
+<script src="/static/js/ai-launcher.js?v=15"></script>
 </body>
 </html>
