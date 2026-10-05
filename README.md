@@ -62,8 +62,7 @@ zero, so an untaken final exam does not drag the grade down before it is sat.
 | Frontend | Django templates, HTMX 2.0, hand-written CSS, vanilla JavaScript |
 | AI | Google Gemini via `google-genai` |
 | Database | SQLite in development, PostgreSQL in production via `psycopg` |
-| Server | Gunicorn |
-| Deployment | Render (`render.yaml`), Procfile-compatible |
+| Deployment | PythonAnywhere |
 
 No build step, no bundler, no CSS framework, and no frontend framework. HTMX
 handles partial page updates — adding an assessment, recalculating a target,
@@ -125,9 +124,12 @@ without raising, such as a stylesheet referencing an undefined custom property.
 
 ## Deployment
 
-`render.yaml` provisions a web service and a PostgreSQL database, sets
-`DJANGO_DEBUG=False`, and generates a secret key. `GEMINI_API_KEY` must be added
-manually. The Procfile makes the project work on any Gunicorn host.
+Deployed on PythonAnywhere: a manually-configured web app running under its
+WSGI loader (`config/wsgi.py`), SQLite as the database, and an `.env` file in
+the project root (loaded automatically via `python-dotenv`) holding
+`GEMINI_API_KEY`, `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=False`, and
+`DJANGO_ALLOWED_HOSTS`. `DJANGO_SECURE_SSL_REDIRECT` is available as an
+override if a future host's proxy doesn't forward `X-Forwarded-Proto`.
 
 ## Notes and limitations
 

@@ -14,16 +14,9 @@ ALLOWED_HOSTS = [x for x in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if 
 if DEBUG:
     ALLOWED_HOSTS += ["127.0.0.1", "localhost"]
 
-# Render injects the service's public hostname. Without this the first
-# request to the deployed site fails with DisallowedHost, because
-# ALLOWED_HOSTS is empty whenever DEBUG is False.
-RENDER_HOST = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-if RENDER_HOST:
-    ALLOWED_HOSTS.append(RENDER_HOST)
-
-# Render terminates TLS at its proxy and forwards the request over plain
-# HTTP. Without this Django thinks the connection is insecure, so its CSRF
-# origin check compares an https:// Origin against an http:// host and
+# The host's reverse proxy terminates TLS and forwards the request over
+# plain HTTP. Without this Django thinks the connection is insecure, so its
+# CSRF origin check compares an https:// Origin against an http:// host and
 # rejects every POST -- login, saving scores, asking the assistant.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("127.0.0.1", "localhost")]
@@ -32,6 +25,11 @@ CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not 
 # still works -- secure cookies would otherwise never be sent to 127.0.0.1
 # and every login would silently fail.
 if not DEBUG:
+    # Default True. Overridable per-host via env var: if a platform's proxy
+    # doesn't send the X-Forwarded-Proto header SECURE_PROXY_SSL_HEADER
+    # expects, request.is_secure() always reads False and this setting
+    # causes an infinite redirect loop. Setting DJANGO_SECURE_SSL_REDIRECT=
+    # False on that host's env fixes it without a code change or redeploy.
     SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True").lower() == "true"
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
